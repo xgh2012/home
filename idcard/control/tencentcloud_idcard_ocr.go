@@ -1,4 +1,4 @@
-package main
+package control
 
 import (
 	"encoding/base64"
@@ -8,7 +8,6 @@ import (
 	_ "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	ocr "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ocr/v20181119"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -26,12 +25,10 @@ type AdvancedInfo struct {
 	Portrait string
 }
 
-var (
-	SecretId  = "AKIDmNixxh1mDRPJzawDG9qJTNbQbDdbcuDo"
-	SecretKey = "WotiOrb5kaB5j8HPIwSlwYtwSo5D9BxW"
-)
+//var tencentComplete = make(chan string)
 
-func main() {
+//入口
+func TencentEntrance() (result string, message string) {
 	//return
 	// 必要步骤：
 	// 实例化一个认证对象，入参需要传入腾讯云账户密钥对secretId，secretKey。
@@ -39,7 +36,7 @@ func main() {
 	// 你也可以直接在代码中写死密钥对，但是小心不要将代码复制、上传或者分享给他人，
 	// 以免泄露密钥对危及你的财产安全。
 	credential := common.NewCredential(
-		SecretId, SecretKey)
+		Ginf.Tencent_secretId, Ginf.Tencent_secretKey)
 
 	// 非必要步骤
 	// 实例化一个客户端配置对象，可以指定超时时间等配置
@@ -62,47 +59,82 @@ func main() {
 	// 推荐使用IDE进行开发，可以方便的跳转查阅各个接口和数据结构的文档说明。
 	request := ocr.NewIDCardOCRRequest()
 
-	getFront(client, request)
+	//文件基本检测
+	ckres, ckmessage := checkFile()
+	if ckres != Success_Code {
+		return ckres, ckmessage
+	}
+
+	//正面结果
+	frontres, frontmessage := getFront(client, request)
+	if frontres != Success_Code {
+		return frontres, frontmessage
+	}
+
+	//背面结果
 	getBack(client, request)
 
+	/*go getFront(client, request)
+	<- tencentComplete
+
+	go getBack(client, request)
+	<- tencentComplete*/
+	return Success_Code, ""
 }
 
-func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) {
-	filedir := "M:/goProgram/zheng.jpg"
+//检测正反面文件是否存在
+func checkFile() (result string, message string) {
+	if ImgInPath.FrontInImgPath == "" {
+		return "GT0001", "正面照地址不全"
+	}
+	_, err := os.Stat(ImgInPath.BackInImgPath)
+	if err != nil {
+		return "GT0002", "正面照读取失败"
+	}
+
+	if ImgInPath.BackInImgPath == "" {
+		return "GT0003", "背面照地址不全"
+	}
+	_, err = os.Stat(ImgInPath.BackInImgPath)
+	if err != nil {
+		return "GT0004", "背面照读取失败"
+	}
+	return Success_Code, "检测成功"
+}
+
+//获取正面信息
+func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string, message string) {
+	filedir := ImgInPath.FrontInImgPath
 	fileContents, err := ioutil.ReadFile(filedir)
 	if err != nil {
-		log.Fatal(err)
+		return "GT0005", "正面照获取失败"
 	}
-	imgBase64 := base64.StdEncoding.EncodeToString(fileContents)
 
+	imgBase64 := base64.StdEncoding.EncodeToString(fileContents)
 	request.ImageBase64 = common.StringPtr(imgBase64)
 	request.CardSide = common.StringPtr("FRONT")
 	request.Config = common.StringPtr(`{"CropIdCard":true,"CropPortrait":true}`)
+
 	// 通过client对象调用想要访问的接口，需要传入请求对象
 	response, err := client.IDCardOCR(request)
 	// 非SDK异常，直接失败。实际代码中可以加入其他的处理。
 	if err != nil {
-		panic(err)
+		return "GT0006", "初始化TX接口失败"
 	}
 
-	if err == nil {
-		//日志开始
-		var f *os.File
-		filedir1 := "M:/goProgram/123.log"
-		f, err = os.Create(filedir1) //创建文件
-		if err != nil {
-			fmt.Println("file create fail")
-			return
-		}
-		//将文件写进去
-		n, err1 := io.WriteString(f, response.ToJsonString())
-		if err1 != nil {
-			fmt.Println("write error", err1)
-			return
-		}
-		fmt.Println("写入的字节数是：", n)
-		//日志开始--结束
-	}
+	//结果赋值----------开始
+	UserInfo.RealName = *response.Response.Name
+	UserInfo.Sex = *response.Response.Sex
+	UserInfo.Nation = *response.Response.Nation
+	UserInfo.Birthday = *response.Response.Birth
+	UserInfo.Address = *response.Response.Address
+	UserInfo.Idcard = *response.Response.IdNum
+
+	UserInfo.IdcardImg = "data/idcard/result/tencent/" + UserInfo.Idcard + "_native.png"
+	UserInfo.HeadImg = "data/idcard/result/tencent/" + UserInfo.Idcard + "_head.png"
+	//结果赋值----------结束
+
+	fmt.Println(UserInfo)
 	responseRss := &AdvancedInfo{}
 	strs := *response.Response.AdvancedInfo
 	json.Unmarshal([]byte(strs), responseRss)
@@ -110,26 +142,35 @@ func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) {
 	if responseRss.IdCard != "" {
 		idcardDecode, err := base64.StdEncoding.DecodeString(responseRss.IdCard)
 		if err != nil {
-			fmt.Println("idcardDecode error", err)
-			return
+			return "GT0007", "身份证信息解析失败"
 		}
-		filesidcard := "M:/goProgram/sfzzhanpian.png"
-		ioutil.WriteFile(filesidcard, idcardDecode, 0666)
+		filesidcard := AppPath + "../" + UserInfo.IdcardImg
+		err = ioutil.WriteFile(filesidcard, idcardDecode, 0666)
+		if err != nil {
+			return "GT0008", "保存身份证信息失败" + filesidcard
+		}
 	}
 
 	if responseRss.Portrait != "" {
 		PortraitDecode, err := base64.StdEncoding.DecodeString(responseRss.Portrait)
 		if err != nil {
-			fmt.Println("PortraitDecode error", err)
-			return
+			return "GT0009", "头像信息解析失败"
 		}
-		filesidcard := "M:/goProgram/PortraitDecode.png"
-		ioutil.WriteFile(filesidcard, PortraitDecode, 0666)
+		filesidcard := AppPath + "../" + UserInfo.HeadImg
+		err = ioutil.WriteFile(filesidcard, PortraitDecode, 0666)
+		if err != nil {
+			return "GT0010", "保存身份证信息失败"
+		}
 	}
+	//tencentComplete <- "frontDone"
+	return Success_Code, "成功"
 }
 
+//获取反面信息
 func getBack(client *ocr.Client, request *ocr.IDCardOCRRequest) {
-	filedir := "M:/goProgram/fan.jpg"
+	filedir := ImgInPath.BackInImgPath
+	fmt.Println(filedir)
+	return
 	fileContents, err := ioutil.ReadFile(filedir)
 	if err != nil {
 		log.Fatal(err)
@@ -146,24 +187,6 @@ func getBack(client *ocr.Client, request *ocr.IDCardOCRRequest) {
 		panic(err)
 	}
 
-	if err == nil {
-		//日志开始
-		var f *os.File
-		filedir1 := "M:/goProgram/1234.log"
-		f, err = os.Create(filedir1) //创建文件
-		if err != nil {
-			fmt.Println("file create fail")
-			return
-		}
-		//将文件写进去
-		n, err1 := io.WriteString(f, response.ToJsonString())
-		if err1 != nil {
-			fmt.Println("write error", err1)
-			return
-		}
-		fmt.Println("写入的字节数是：", n)
-		//日志开始--结束
-	}
 	responseRss := &AdvancedInfo{}
 	strs := *response.Response.AdvancedInfo
 	json.Unmarshal([]byte(strs), responseRss)
@@ -187,4 +210,5 @@ func getBack(client *ocr.Client, request *ocr.IDCardOCRRequest) {
 		filesidcard := "M:/goProgram/PortraitDecode_fan.png"
 		ioutil.WriteFile(filesidcard, PortraitDecode, 0666)
 	}
+	//tencentComplete <- "backDone"
 }
