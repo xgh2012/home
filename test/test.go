@@ -26,7 +26,6 @@ func main() {
 	bytes5 := make([]uint64, length)
 	for i := 0; i < length; i++ {
 		bytes3[i] = bytes1[i] ^ bytes2[i]
-
 		bytes4[i] = (bytes1[i]) + (bytes2[i])
 		bytes5[i] = uint64(bytes1[i]) + uint64(bytes2[i])
 	}

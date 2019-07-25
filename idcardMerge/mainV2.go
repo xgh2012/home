@@ -12,8 +12,9 @@ import (
 	"image/png"
 	"os"
 )
+
 func main() {
-	Zhengmian()
+	ZhengmianV3()
 	//Fangmian()
 }
 
@@ -23,15 +24,12 @@ func main() {
 字符间距（AV）：号码（50）
 字符行距：住址（12点）
 **/
-
-func Zhengmian()  {
-	//var pt image.Point
-
-	textBrush, err := imagedraw.NewTextBrush("M:/goProgram/src/home/idcardMerge/font/hei.ttf", 50, image.Black, 300)
+func ZhengmianV3() {
+	textBrush, err := imagedraw.NewTextBrush("../data/font/hei.ttf", 50, image.Black, 300)
 	if err != nil {
 		fmt.Println(err)
 	}
-	backgroundImg, err := imaging.Open("M:/goProgram/shenfenzheng_zhengmian.png")
+	backgroundImg, err := imaging.Open("../data/idcardMerge/source/shenfenzheng_zhengmian.png")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -40,7 +38,7 @@ func Zhengmian()  {
 	draw.Draw(backgroundImgBounds, backgroundImg.Bounds(), backgroundImg, image.ZP, draw.Src)
 
 	//姓名
-	textBrush.DrawFontOnRGBA(backgroundImgBounds, image.Pt(358, 172), `张三
+	textBrush.DrawFontOnRGBA(backgroundImgBounds, image.Pt(358, 172), `周宏楷
 `)
 
 	//性别
@@ -51,13 +49,14 @@ func Zhengmian()  {
 	`)
 
 	//住址
-	textBrush.TextWidth=860
-	textBrush.DrawFontOnRGBA(backgroundImgBounds, image.Pt(358, 593), `湖北省咸宁市咸安区永安大道
+	textBrush.TextWidth = 900
+	textBrush.FontSize = 55
+	textBrush.DrawFontOnRGBA(backgroundImgBounds, image.Pt(358, 593), `湖北省咸宁市咸安区永安
 
-测试地址
+大道175号平房
 `)
 
-	textBrushBirthday, err := imagedraw.NewTextBrush("M:/goProgram/src/home/idcardMerge/font/fzhei.ttf", 50, image.Black, 300)
+	textBrushBirthday, err := imagedraw.NewTextBrush("../data/font/fzhei.ttf", 50, image.Black, 300)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -66,7 +65,7 @@ func Zhengmian()  {
 `)
 
 	//出生月
-	textBrushBirthday.DrawFontOnRGBA(backgroundImgBounds,image.Pt(680, 452), `8
+	textBrushBirthday.DrawFontOnRGBA(backgroundImgBounds, image.Pt(680, 452), `8
 `)
 
 	//出生日
@@ -74,26 +73,30 @@ func Zhengmian()  {
 `)
 
 	//身份证号
-	textBrushIdcard, errIdcard := imagedraw.NewTextBrush("M:/goProgram/src/home/idcardMerge/OCR-B 10 BT.TTF", 70, image.Black, 900)
+	textBrushIdcard, errIdcard := imagedraw.NewTextBrush("../data/font/OCR-B 10 BT.TTF", 70, image.Black, 980)
 	if errIdcard != nil {
 		fmt.Println(errIdcard)
 	}
-	textBrushIdcard.DrawFontOnRGBA(backgroundImgBounds, image.Pt(658, 916), `421202199808170512
-
+	textBrushIdcard.DrawFontOnRGBA(backgroundImgBounds, image.Pt(658, 916), `421202200008170514
 `)
 
-	imgRGBA, err := GetHeadImageRGBA("M:/goProgram/foreground.png")
+	imgRGBA, err := GetHeadImageRGBAV3("M:/goProgram/foreground.png")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	x0, y0 := 1295, 300
-	draw.DrawMask(backgroundImgBounds, image.Rect(x0, y0, x0+450, y0+554), imgRGBA, image.ZP, imgRGBA, image.ZP, draw.Over)
-	//m=fzImage1(m)
-	imaging.Save(backgroundImgBounds, "./../zhengmian.jpg")
+	x0, y0 := 1155, 80
+	draw.DrawMask(backgroundImgBounds, image.Rect(x0, y0, x0+636, y0+775), imgRGBA, image.ZP, imgRGBA, image.ZP, draw.Over)
+
+	//backgroundImgBounds=fzImageV3(backgroundImgBounds)
+	imaging.Save(backgroundImgBounds, "../data/idcardMerge/result/zhengmian_big.jpg")
+
+	//固定图片大小输出
+	resultImgDecode := resize.Resize(660, 422, backgroundImgBounds, resize.Lanczos3)
+	imaging.Save(resultImgDecode, "../data/idcardMerge/result/zhengmian_small.jpg")
 }
 
-func Fangmian()  {
+func FangmianV3() {
 	textBrush, err := imagedraw.NewTextBrush("M:/goProgram/src/home/idcardMerge/华文仿宋 加粗.TTF", 30, image.Black, 999)
 	if err != nil {
 		fmt.Println(err)
@@ -121,19 +124,17 @@ func Fangmian()  {
 	imaging.Save(backgroundImgBounds, "./../fangmian.jpg")
 }
 
-
-func GetHeadImageRGBA(iamgePath string) (*image.RGBA, error) {
-	fmt.Println(iamgePath)
+func GetHeadImageRGBAV3(iamgePath string) (*image.RGBA, error) {
 	img, err := imaging.Open(iamgePath)
 	if err != nil {
 		return nil, err
 	}
 	touxiang, _ := os.Open(iamgePath)
-	headImgDecode, _ := png.Decode( touxiang)
-	defer  touxiang.Close()
+	headImgDecode, _ := png.Decode(touxiang)
+	defer touxiang.Close()
 
 	//固定图片大小
-	headImgDecode=resize.Resize(450, 554, headImgDecode, resize.Lanczos3)
+	headImgDecode = resize.Resize(636, 775, headImgDecode, resize.Lanczos3)
 
 	headBounds := headImgDecode.Bounds()
 	headRgba := image.NewRGBA(headBounds)
@@ -142,7 +143,7 @@ func GetHeadImageRGBA(iamgePath string) (*image.RGBA, error) {
 }
 
 //图片灰化处理
-func hdImage1(m image.Image) *image.RGBA {
+func hdImageV3(m image.Image) *image.RGBA {
 	bounds := m.Bounds()
 	dx := bounds.Dx()
 	dy := bounds.Dy()
@@ -160,7 +161,7 @@ func hdImage1(m image.Image) *image.RGBA {
 }
 
 //图片色彩反转
-func fzImage1(m image.Image) *image.RGBA {
+func fzImageV3(m image.Image) *image.RGBA {
 	bounds := m.Bounds()
 	dx := bounds.Dx()
 	dy := bounds.Dy()
