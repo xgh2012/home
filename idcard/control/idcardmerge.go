@@ -12,6 +12,11 @@ import (
 	"strings"
 )
 
+func MergeEntrance() {
+	go GetZhengMian()
+	go GetFanMian()
+}
+
 /**
 出生年月日 方正黑体简体
 字符大小：姓名＋号码（11点）其他（9点）

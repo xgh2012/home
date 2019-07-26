@@ -32,6 +32,8 @@ type UserInfoType struct {
 	Idcard                 string //身份证号
 	NativeIdcardImg        string //原始 图片地址 腾讯返回
 	NativeIdcardImgUlr     string //原始 图片地址 腾讯返回
+	NativeIdcardBackImg    string //原始 图片地址 腾讯返回
+	NativeIdcardBackImgUlr string //原始 图片地址 腾讯返回
 	HeadImg                string //头像 图片地址
 	HeadImgUlr             string //头像 图片地址
 	Authority              string //发证机关
@@ -67,6 +69,7 @@ var (
 	Ginf         Tglbinf
 	Success_Code = "P0000"
 	Success_Mes  = "成功"
+	CheckIsOk    = false
 )
 var complete = make(chan int)
 
@@ -91,6 +94,7 @@ func init() {
 	}
 
 	LoadConfig()
+	CheckIsOk = true
 	//<-complete
 }
 
@@ -131,7 +135,6 @@ func GetAppPath() string {
 //2、
 func GetIdcardImageSavePath(path string) (rpath string, rurl string) {
 	pre_dir := UserInfo.Idcard[:6]
-
 	//获取传入路径 去除文件名
 	tmpPath := path[:strings.LastIndex(path, "/")]
 

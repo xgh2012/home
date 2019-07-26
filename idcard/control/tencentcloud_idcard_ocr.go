@@ -182,6 +182,23 @@ func getBack(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string, 
 		return "GT0012", "初始化TX接口失败"
 	}
 
+	responseRss := &AdvancedInfo{}
+	strs := *response.Response.AdvancedInfo
+	json.Unmarshal([]byte(strs), responseRss)
+
+	UserInfo.NativeIdcardBackImg, UserInfo.NativeIdcardBackImgUlr = GetIdcardImageSavePath("result/tencent/" + UserInfo.Idcard + "_back_native.png")
+
+	if responseRss.IdCard != "" {
+		idcardDecode, err := base64.StdEncoding.DecodeString(responseRss.IdCard)
+		if err != nil {
+			return "GT00013", "身份证信息解析失败"
+		}
+		err = ioutil.WriteFile(UserInfo.NativeIdcardBackImg, idcardDecode, 0666)
+		if err != nil {
+			return "GT00014", "保存身份证信息失败"
+		}
+	}
+
 	UserInfo.Authority = *response.Response.Authority
 	UserInfo.ValidDate = *response.Response.ValidDate
 

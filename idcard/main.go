@@ -17,8 +17,14 @@ type result struct {
 *3、调用 百度人像分割 获取处理后的图片
 *4、调用图片合成程序 合成新的图片
 *5、返回信息
- */
+* 	TODO 速度可优化
+		1)、腾讯正反面使用goroutine请求
+		2)、背面返回后，直接调用合成背面图片，减少相应时间
+*/
 func main() {
+	if control.CheckIsOk == false {
+		return
+	}
 	//1、传出图片地址身份证正反面
 	//control.init() baseapi.go
 
