@@ -3,13 +3,11 @@ package control
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	_ "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	ocr "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ocr/v20181119"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
@@ -72,14 +70,16 @@ func TencentEntrance() (result string, message string) {
 	}
 
 	//背面结果
-	getBack(client, request)
-
+	backres, backmessage := getBack(client, request)
+	if backres != Success_Code {
+		return backres, backmessage
+	}
 	/*go getFront(client, request)
 	<- tencentComplete
 
 	go getBack(client, request)
 	<- tencentComplete*/
-	return Success_Code, ""
+	return Success_Code, Success_Mes
 }
 
 //检测正反面文件是否存在
@@ -130,11 +130,10 @@ func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string,
 	UserInfo.Address = *response.Response.Address
 	UserInfo.Idcard = *response.Response.IdNum
 
-	UserInfo.IdcardImg = "data/idcard/result/tencent/" + UserInfo.Idcard + "_native.png"
+	UserInfo.NativeIdcardImg = "data/idcard/result/tencent/" + UserInfo.Idcard + "_native.png"
 	UserInfo.HeadImg = "data/idcard/result/tencent/" + UserInfo.Idcard + "_head.png"
 	//结果赋值----------结束
 
-	fmt.Println(UserInfo)
 	responseRss := &AdvancedInfo{}
 	strs := *response.Response.AdvancedInfo
 	json.Unmarshal([]byte(strs), responseRss)
@@ -144,10 +143,9 @@ func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string,
 		if err != nil {
 			return "GT0007", "身份证信息解析失败"
 		}
-		filesidcard := AppPath + "../" + UserInfo.IdcardImg
-		err = ioutil.WriteFile(filesidcard, idcardDecode, 0666)
+		err = ioutil.WriteFile(GetRealPath(UserInfo.NativeIdcardImg), idcardDecode, 0666)
 		if err != nil {
-			return "GT0008", "保存身份证信息失败" + filesidcard
+			return "GT0008", "保存身份证信息失败"
 		}
 	}
 
@@ -167,48 +165,26 @@ func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string,
 }
 
 //获取反面信息
-func getBack(client *ocr.Client, request *ocr.IDCardOCRRequest) {
+func getBack(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string, message string) {
 	filedir := ImgInPath.BackInImgPath
-	fmt.Println(filedir)
-	return
 	fileContents, err := ioutil.ReadFile(filedir)
 	if err != nil {
-		log.Fatal(err)
+		return "GT0011", "背面照获取失败"
 	}
 	imgBase64 := base64.StdEncoding.EncodeToString(fileContents)
 
 	request.ImageBase64 = common.StringPtr(imgBase64)
 	request.CardSide = common.StringPtr("BACK")
-	request.Config = common.StringPtr(`{"CropIdCard":true,"CropPortrait":true}`)
 	// 通过client对象调用想要访问的接口，需要传入请求对象
 	response, err := client.IDCardOCR(request)
 	// 非SDK异常，直接失败。实际代码中可以加入其他的处理。
 	if err != nil {
-		panic(err)
+		return "GT0012", "初始化TX接口失败"
 	}
 
-	responseRss := &AdvancedInfo{}
-	strs := *response.Response.AdvancedInfo
-	json.Unmarshal([]byte(strs), responseRss)
+	UserInfo.Authority = *response.Response.Authority
+	UserInfo.ValidDate = *response.Response.ValidDate
 
-	if responseRss.IdCard != "" {
-		idcardDecode, err := base64.StdEncoding.DecodeString(responseRss.IdCard)
-		if err != nil {
-			fmt.Println("idcardDecode error", err)
-			return
-		}
-		filesidcard := "M:/goProgram/sfzzhanpian_fan.png"
-		ioutil.WriteFile(filesidcard, idcardDecode, 0666)
-	}
-
-	if responseRss.Portrait != "" {
-		PortraitDecode, err := base64.StdEncoding.DecodeString(responseRss.Portrait)
-		if err != nil {
-			fmt.Println("PortraitDecode error", err)
-			return
-		}
-		filesidcard := "M:/goProgram/PortraitDecode_fan.png"
-		ioutil.WriteFile(filesidcard, PortraitDecode, 0666)
-	}
+	return Success_Code, Success_Mes
 	//tencentComplete <- "backDone"
 }
