@@ -71,7 +71,7 @@ func GetZhengMian() (result string, message string) {
 `)
 
 	//身份证号
-	textBrushIdcard, err := imagedraw.NewTextBrush(GetRealPath("data/font/OCR-B 10 BT.TTF"), 70, image.Black, 980)
+	textBrushIdcard, err := imagedraw.NewTextBrush(GetRealPath("data/font/OCR-B 10 BT.ttf"), 70, image.Black, 980)
 	if err != nil {
 		return "GZ0005", "打开字体失败"
 	}
