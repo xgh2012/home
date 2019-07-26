@@ -58,7 +58,7 @@ func getAccessToken() {
 //人像分割接口
 func bodySeg() (result string, message string) {
 	urls := "https://aip.baidubce.com/rest/2.0/image-classify/v1/body_seg?access_token=" + access_token
-	content, err := ioutil.ReadFile(GetRealPath(UserInfo.HeadImg))
+	content, err := ioutil.ReadFile(UserInfo.HeadImg)
 	if err != nil {
 		return "GB0001", "打开用户头像失败"
 	}
@@ -90,8 +90,8 @@ func bodySeg() (result string, message string) {
 	if err != nil {
 		return "GB0005", "解析用户头像失败"
 	}
-	UserInfo.ForegroundImg = "data/idcard/result/baidu/" + UserInfo.Idcard + "_foreground.png"
-	err = ioutil.WriteFile(GetRealPath(UserInfo.ForegroundImg), imgDecode, 0666)
+	UserInfo.ForegroundImg, UserInfo.ForegroundImgUlr = GetIdcardImageSavePath("result/baidu/" + UserInfo.Idcard + "_foreground.png")
+	err = ioutil.WriteFile(UserInfo.ForegroundImg, imgDecode, 0666)
 	if err != nil {
 		return "GB0006", "存储用户头像失败"
 	}

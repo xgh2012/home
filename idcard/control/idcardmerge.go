@@ -78,7 +78,7 @@ func GetZhengMian() (result string, message string) {
 	textBrushIdcard.DrawFontOnRGBA(backgroundImgBounds, image.Pt(658, 916), UserInfo.Idcard+`
 `)
 
-	imgRGBA, err := GetHeadImageRGBA(GetRealPath(UserInfo.ForegroundImg))
+	imgRGBA, err := GetHeadImageRGBA(UserInfo.ForegroundImg)
 	if err != nil {
 		return "GZ0006", "打开头像失败"
 	}
@@ -87,16 +87,16 @@ func GetZhengMian() (result string, message string) {
 	draw.DrawMask(backgroundImgBounds, image.Rect(x0, y0, x0+636, y0+775), imgRGBA, image.ZP, imgRGBA, image.ZP, draw.Over)
 
 	//backgroundImgBounds=fzImageV3(backgroundImgBounds)
-	UserInfo.IdcardImgBigFront = "data/idcard/result/merge/zhengmian" + UserInfo.Idcard + "_big.jpg"
-	UserInfo.IdcardImgSmallFront = "data/idcard/result/merge/zhengmian" + UserInfo.Idcard + "_small.jpg"
+	UserInfo.IdcardImgBigFront, UserInfo.IdcardImgBigFrontUrl = GetIdcardImageSavePath("result/merge/zhengmian" + UserInfo.Idcard + "_big.jpg")
+	UserInfo.IdcardImgSmallFront, UserInfo.IdcardImgSmallFrontUrl = GetIdcardImageSavePath("result/merge/zhengmian" + UserInfo.Idcard + "_small.jpg")
 
-	err = imaging.Save(backgroundImgBounds, GetRealPath(UserInfo.IdcardImgBigFront))
+	err = imaging.Save(backgroundImgBounds, UserInfo.IdcardImgBigFront)
 	if err != nil {
 		return "GZ0007", "保存身份证失败大图"
 	}
 	//固定图片大小输出
 	resultImgDecode := resize.Resize(660, 422, backgroundImgBounds, resize.Lanczos3)
-	err = imaging.Save(resultImgDecode, GetRealPath(UserInfo.IdcardImgSmallFront))
+	err = imaging.Save(resultImgDecode, UserInfo.IdcardImgSmallFront)
 	if err != nil {
 		return "GZ0008", "保存身份证失败小图"
 	}
@@ -129,15 +129,15 @@ func GetFanMian() (result string, message string) {
 	textBrush.DrawFontOnRGBA(backgroundImgBounds, image.Pt(780, 795), UserInfo.Authority+`
 	`)
 
-	UserInfo.IdcardImgBigBack = "data/idcard/result/merge/fanmian" + UserInfo.Idcard + "_big.jpg"
-	UserInfo.IdcardImgSmallBack = "data/idcard/result/merge/fanmian" + UserInfo.Idcard + "_small.jpg"
+	UserInfo.IdcardImgBigBack, UserInfo.IdcardImgBigBackUrl = GetIdcardImageSavePath("result/merge/fanmian" + UserInfo.Idcard + "_big.jpg")
+	UserInfo.IdcardImgSmallBack, UserInfo.IdcardImgSmallBackUrl = GetIdcardImageSavePath("result/merge/fanmian" + UserInfo.Idcard + "_small.jpg")
 
-	err = imaging.Save(backgroundImgBounds, GetRealPath(UserInfo.IdcardImgBigBack))
+	err = imaging.Save(backgroundImgBounds, UserInfo.IdcardImgBigBack)
 	if err != nil {
 		return "GF0003", "保存身份证失败大图"
 	}
 	resultImgDecode := resize.Resize(660, 422, backgroundImgBounds, resize.Lanczos3)
-	err = imaging.Save(resultImgDecode, GetRealPath(UserInfo.IdcardImgSmallBack))
+	err = imaging.Save(resultImgDecode, UserInfo.IdcardImgSmallBack)
 	if err != nil {
 		return "GF0004", "保存身份证失败小图"
 	}

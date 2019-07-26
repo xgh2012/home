@@ -130,8 +130,8 @@ func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string,
 	UserInfo.Address = *response.Response.Address
 	UserInfo.Idcard = *response.Response.IdNum
 
-	UserInfo.NativeIdcardImg = "data/idcard/result/tencent/" + UserInfo.Idcard + "_native.png"
-	UserInfo.HeadImg = "data/idcard/result/tencent/" + UserInfo.Idcard + "_head.png"
+	UserInfo.NativeIdcardImg, UserInfo.NativeIdcardImgUlr = GetIdcardImageSavePath("result/tencent/" + UserInfo.Idcard + "_native.png")
+	UserInfo.HeadImg, UserInfo.HeadImgUlr = GetIdcardImageSavePath("result/tencent/" + UserInfo.Idcard + "_head.png")
 	//结果赋值----------结束
 
 	responseRss := &AdvancedInfo{}
@@ -143,7 +143,7 @@ func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string,
 		if err != nil {
 			return "GT0007", "身份证信息解析失败"
 		}
-		err = ioutil.WriteFile(GetRealPath(UserInfo.NativeIdcardImg), idcardDecode, 0666)
+		err = ioutil.WriteFile(UserInfo.NativeIdcardImg, idcardDecode, 0666)
 		if err != nil {
 			return "GT0008", "保存身份证信息失败"
 		}
@@ -154,8 +154,7 @@ func getFront(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string,
 		if err != nil {
 			return "GT0009", "头像信息解析失败"
 		}
-		filesidcard := AppPath + "../" + UserInfo.HeadImg
-		err = ioutil.WriteFile(filesidcard, PortraitDecode, 0666)
+		err = ioutil.WriteFile(UserInfo.HeadImg, PortraitDecode, 0666)
 		if err != nil {
 			return "GT0010", "保存身份证信息失败"
 		}
@@ -173,6 +172,7 @@ func getBack(client *ocr.Client, request *ocr.IDCardOCRRequest) (result string, 
 	}
 	imgBase64 := base64.StdEncoding.EncodeToString(fileContents)
 
+	request.Config = common.StringPtr(`{"CropIdCard":true}`)
 	request.ImageBase64 = common.StringPtr(imgBase64)
 	request.CardSide = common.StringPtr("BACK")
 	// 通过client对象调用想要访问的接口，需要传入请求对象
