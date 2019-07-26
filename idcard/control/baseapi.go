@@ -72,13 +72,13 @@ var complete = make(chan int)
 
 func init() {
 	AppPath = GetAppPath()
-	/*params := os.Args
+	params := os.Args
 	if len(params) == 1 {
 		fmt.Println("No data")
 		return
 	}
-	data := params[1]*/
-	data := `%7B%22FrontInImgPath%22%3A%22M%3A%5C%5Ctest%5C%5Czheng.jpg%22%2C%22BackInImgPath%22%3A%22M%3A%5C%5Ctest%5C%5Cfan.jpg%22%7D`
+	data := params[1]
+	//data := `%7B%22FrontInImgPath%22%3A%22M%3A%5C%5Ctest%5C%5Czheng.jpg%22%2C%22BackInImgPath%22%3A%22M%3A%5C%5Ctest%5C%5Cfan.jpg%22%7D`
 	data_json, err := url.QueryUnescape(data)
 	if err != nil {
 		fmt.Println("Data urldecode wrong")
