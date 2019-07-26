@@ -56,6 +56,7 @@ func getAccessToken() {
 }
 
 //人像分割接口
+//SDK 见百度文档 https://ai.baidu.com/docs#/Body-API/top
 func bodySeg() (result string, message string) {
 	urls := "https://aip.baidubce.com/rest/2.0/image-classify/v1/body_seg?access_token=" + access_token
 	content, err := ioutil.ReadFile(UserInfo.HeadImg)
