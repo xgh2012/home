@@ -24,9 +24,7 @@ func WebdataTran(w http.ResponseWriter, r *http.Request) {
 	common.GlobalParams.Data = r.PostFormValue("data")
 	common.GlobalParams.Token = r.PostFormValue("token")
 
-	ParseData()
-
-	model.GetHeader()
+	go Test()
 	/*if len(r.Header) > 0 {
 		for k,v := range r.Header {
 			fmt.Printf("%s=%s\n", k, v[0])
@@ -43,7 +41,7 @@ func WebdataTran(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test() {
-	//数据赋值
+	//数据赋值 测试数据
 	common.GlobalParams.Barid = "44030610001028"
 	common.GlobalParams.Zhongzhuan = "zhongzhuan.topfreeweb.net%3A50001"
 	common.GlobalParams.IVer = "0"
@@ -54,7 +52,15 @@ func Test() {
 	common.GlobalParams.Token = "LZ2zhongzhuan:8f0653dff832b4bb2ee0b079e8124b5d"
 
 	ParseData()
-	model.GetHeader()
+
+	model.LgjHeader()
+
+	sendData := model.LgjBobys()
+
+	resultCount, resultRcev := model.DoSend(sendData)
+
+	model.LgjDescResult(resultCount, resultRcev)
+
 }
 
 //数据解析

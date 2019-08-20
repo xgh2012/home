@@ -11,7 +11,7 @@ import (
 )
 
 //包头总长 71
-type LgjHeader struct {
+type LgjHeaderStr struct {
 	FSign     []byte //用于区分错包和乱包 Array [0..7] of Char
 	iCMD      []byte //包头类型 short 2
 	iSubCmd   byte   //包头类型子类型（用于扩展） byte 1
@@ -25,10 +25,11 @@ type LgjHeader struct {
 	FuniqueID []byte //通信唯一识别符   TGuid 16
 	Socketfd  []byte //这个只是中转时填入，中转连接的两方都不原样返回。初始创建包时填0即可    Integer 4
 	iDataLen  []byte //包体长度    Integer 4
+	sendData  string //包体数据
 }
 
 var (
-	LHeader     LgjHeader
+	LHeader     LgjHeaderStr
 	LgjAllBody  []byte
 	tmpBodyData [][]byte
 )
@@ -38,7 +39,7 @@ var (
 *可变参数
 * icmd iVer SBarID
  */
-func GetHeader() {
+func LgjHeader() {
 	//FSign 处理 0 + 8 = 8
 	LHeader.FSign = []byte("XAPPCODE")
 	LgjAllBody = byteMerge(LgjAllBody, LHeader.FSign)
@@ -57,7 +58,7 @@ func GetHeader() {
 	LHeader.iVer = IntToByte(iver)[0:2]
 	LgjAllBody = byteMerge(LgjAllBody, LHeader.iVer)
 
-	//iCheckSum校验和（效验以下所有的值） 13+1=14 暂时用0占位置
+	//iCheckSum校验和（效验以下所有的值） 13+1=14 暂时用0占位置 在body 确认后再重新赋值
 	LgjAllBody = append(LgjAllBody, byte(0))
 
 	//ReCMD 处理 14+1 = 15
@@ -65,17 +66,10 @@ func GetHeader() {
 	LgjAllBody = append(LgjAllBody, LHeader.ReCMD)
 
 	//SBarID 处理 15+20=35
-	barid := []byte(common.GlobalParams.Barid)
-	baridlen := len(barid)
-	var tmpbarid uint8
-	for i := 0; i < 20; i++ {
-		if i >= baridlen {
-			tmpbarid = byte(0)
-		} else {
-			tmpbarid = barid[i]
-		}
-		LHeader.SBarID = append(LHeader.SBarID, tmpbarid)
-	}
+	var barid = make([]byte, 20)
+	tmpbarid := []byte(common.GlobalParams.Barid)
+	copy(barid, tmpbarid)
+	LHeader.SBarID = barid
 	LgjAllBody = byteMerge(LgjAllBody, LHeader.SBarID)
 
 	//IEnc 处理 35+4=39
@@ -102,7 +96,6 @@ func GetHeader() {
 	LHeader.Socketfd = IntToByte(int64(0))[0:4]
 	LgjAllBody = byteMerge(LgjAllBody, LHeader.Socketfd)
 
-	LgjBobys()
 }
 
 //byte 数组合并
@@ -112,7 +105,7 @@ func byteMerge(srcData []byte, distData []byte) (result []byte) {
 	return result
 }
 
-func LgjBobys() {
+func LgjBobys() []byte {
 	//包体处理
 	body := []byte(common.GlobalParams.Data)
 	//iDataLen 处理 67+4=71
@@ -123,9 +116,7 @@ func LgjBobys() {
 	LgjAllBody = byteMerge(LgjAllBody, body)
 	LHeader.iCheckSum = CheckSum(LgjAllBody[14:])
 	LgjAllBody[13] = LHeader.iCheckSum
-
-	resultCount, resultRcev := DoSend(LgjAllBody)
-	LgjDescResult(resultCount, resultRcev)
+	return LgjAllBody
 }
 
 //对结果进行处理
