@@ -13,6 +13,8 @@ type GlobalConfig struct { //配置文件要通过tag来指定配置文件中的
 
 	LogPath string `ini:"logpath"`
 	LogFile string `ini:"logfile"`
+
+	Lghhostname string `ini:"lghhostname"`
 }
 
 //加载配置文件
