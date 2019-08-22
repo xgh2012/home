@@ -7,6 +7,14 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
+)
+
+var pool = common.RedisPool
+
+const (
+	Time_Layout_1 = "2006-01-02 15:04:05"
+	Time_Layout_2 = "20060102150405"
 )
 
 //http接收数据
@@ -15,16 +23,17 @@ func WebdataTran(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm() //解析参数
 	//数据赋值
-	common.GlobalParams.Barid = r.PostFormValue("barid")
-	common.GlobalParams.Zhongzhuan = r.PostFormValue("zhongzhuan")
-	common.GlobalParams.IVer = r.PostFormValue("iVer")
-	common.GlobalParams.Itype = r.PostFormValue("itype")
-	common.GlobalParams.Icmd = r.PostFormValue("icmd")
-	common.GlobalParams.NoRedis = r.PostFormValue("NoRedis")
-	common.GlobalParams.Data = r.PostFormValue("data")
-	common.GlobalParams.Token = r.PostFormValue("token")
+	common.GlobalParams.Barid = r.FormValue("barid")
+	common.GlobalParams.Zhongzhuan = r.FormValue("zhongzhuan")
+	common.GlobalParams.IVer = r.FormValue("iVer")
+	common.GlobalParams.Itype = r.FormValue("itype")
+	common.GlobalParams.Icmd = r.FormValue("icmd")
+	common.GlobalParams.NoRedis = r.FormValue("NoRedis")
+	common.GlobalParams.Data = r.FormValue("data")
+	common.GlobalParams.Token = r.FormValue("token")
 
-	go Test()
+	go getRes()
+
 	/*if len(r.Header) > 0 {
 		for k,v := range r.Header {
 			fmt.Printf("%s=%s\n", k, v[0])
@@ -40,27 +49,17 @@ func WebdataTran(w http.ResponseWriter, r *http.Request) {
 	}*/
 }
 
-func Test() {
-	//数据赋值 测试数据
-	common.GlobalParams.Barid = "44030610001028"
-	common.GlobalParams.Zhongzhuan = "zhongzhuan.topfreeweb.net%3A50001"
-	common.GlobalParams.IVer = "0"
-	common.GlobalParams.Itype = "0"
-	common.GlobalParams.Icmd = "2006"
-	common.GlobalParams.NoRedis = "1"
-	common.GlobalParams.Data = "%7B%22CardNo%22%3A%22513922198707082852%22%2C%22ccxs%22%3A%22123%22%2C%22money%22%3A%225.65%22%2C%22notify_host%22%3A%22api2.topfreeweb.net%22%7D"
-	common.GlobalParams.Token = "LZ2zhongzhuan:8f0653dff832b4bb2ee0b079e8124b5d"
-
+//获取最终业务结果
+func getRes() {
 	ParseData()
-
-	model.LgjHeader()
-
-	sendData := model.LgjBobys()
-
+	sendData := model.LgjBodys(common.GlobalParams)
 	resultCount, resultRcev := model.DoSend(sendData)
-
-	model.LgjDescResult(resultCount, resultRcev)
-
+	bussRes := model.LgjDescResult(resultCount, resultRcev)
+	client := pool.Get()
+	defer client.Close()
+	common.GlobalParams.Token = common.GlobalParams.Token[14:] + time.Now().Format(Time_Layout_2)
+	client.Do("SET", common.GlobalParams.Token, bussRes)
+	client.Do("EXPIRE", common.GlobalParams.Token, 500)
 }
 
 //数据解析

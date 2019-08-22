@@ -23,15 +23,13 @@ func DoSend(sendData []byte) (int, []byte) {
 
 	var (
 		result = make([]byte, 1024)
-		read   = true
 		count  = 0
 	)
 
-	for read {
-		count, err = conn.Read(result)
-		read = (err != nil)
+	count, err = conn.Read(result)
+	if err != nil {
+
 	}
 
-	//fmt.Println(string(result[0:count]))
 	return count, result[0:count]
 }

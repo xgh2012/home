@@ -4,6 +4,7 @@
 package redishandle
 
 import (
+	"fmt"
 	"home/zhongzhuan/common"
 )
 
@@ -14,7 +15,8 @@ var (
 func Test() {
 	client := pool.Get()
 	defer client.Close()
-	client.Do("SET", "xghsdfsdfds", 1232432)
+	x, err := client.Do("SET", "xghsdfsdfds", 1232432)
+	fmt.Println(x, err)
 	client.Do("HMSET", "SSS", "key1", "V1", "key2", "V2", "key3", "V3")
 	//使用newPool构建一个redis连接池
 	/*for i := 1;i <= 9;i++ {

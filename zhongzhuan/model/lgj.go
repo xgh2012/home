@@ -3,7 +3,6 @@ package model
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"home/zhongzhuan/common"
 	"log"
 	"math/rand"
@@ -30,7 +29,6 @@ type LgjHeaderStr struct {
 
 var (
 	LHeader     LgjHeaderStr
-	LgjAllBody  []byte
 	tmpBodyData [][]byte
 )
 
@@ -39,63 +37,65 @@ var (
 *可变参数
 * icmd iVer SBarID
  */
-func LgjHeader() {
+func LgjBodys(params common.Params) []byte {
+	var LgjAllBody []byte
 	//FSign 处理 0 + 8 = 8
-	LHeader.FSign = []byte("XAPPCODE")
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.FSign)
+	LgjAllBody = byteMerge(LgjAllBody, []byte("XAPPCODE"))
 
 	//iCMD 处理 8+2=10
-	cmd, _ := strconv.ParseInt(common.GlobalParams.Icmd, 0, 32)
-	LHeader.iCMD = IntToByte(cmd)[0:2]
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.iCMD)
+	cmd, _ := strconv.ParseInt(params.Icmd, 0, 32)
+	LgjAllBody = byteMerge(LgjAllBody, IntToByte(cmd)[0:2])
 
 	//iSubCmd 处理 10+1=11
-	LHeader.iSubCmd = byte(0)
-	LgjAllBody = byteMerge(LgjAllBody, []byte{LHeader.iSubCmd})
+	LgjAllBody = byteMerge(LgjAllBody, []byte{byte(0)})
 
 	//iVer 处理 11+2=13
-	iver, _ := strconv.ParseInt(common.GlobalParams.IVer, 0, 32)
-	LHeader.iVer = IntToByte(iver)[0:2]
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.iVer)
+	iver, _ := strconv.ParseInt(params.IVer, 0, 32)
+	LgjAllBody = byteMerge(LgjAllBody, IntToByte(iver)[0:2])
 
 	//iCheckSum校验和（效验以下所有的值） 13+1=14 暂时用0占位置 在body 确认后再重新赋值
 	LgjAllBody = append(LgjAllBody, byte(0))
 
 	//ReCMD 处理 14+1 = 15
-	LHeader.ReCMD = byte(0)
-	LgjAllBody = append(LgjAllBody, LHeader.ReCMD)
+	LgjAllBody = append(LgjAllBody, byte(0))
 
 	//SBarID 处理 15+20=35
 	var barid = make([]byte, 20)
-	tmpbarid := []byte(common.GlobalParams.Barid)
+	tmpbarid := []byte(params.Barid)
 	copy(barid, tmpbarid)
-	LHeader.SBarID = barid
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.SBarID)
+	LgjAllBody = byteMerge(LgjAllBody, barid)
 
 	//IEnc 处理 35+4=39
-	LHeader.IEnc = IntToByte(int64(0))[0:4]
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.IEnc)
+	LgjAllBody = byteMerge(LgjAllBody, IntToByte(int64(0))[0:4])
 
 	//iMax 最大包数 处理 39+4 = 43
-	LHeader.iMax = IntToByte(int64(1))[0:4]
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.iMax)
+	LgjAllBody = byteMerge(LgjAllBody, IntToByte(int64(1))[0:4])
 
 	//iCur 当前包序号 处理 43+4 = 47
-	LHeader.iCur = IntToByte(int64(1))[0:4]
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.iCur)
+	LgjAllBody = byteMerge(LgjAllBody, IntToByte(int64(1))[0:4])
 
 	//FuniqueID 47+16=63
-	var tfid uint8
+	var funiqueid []byte
 	for idx := 0; idx < 16; idx++ {
-		tfid = byte(rand.Int())
-		LHeader.FuniqueID = append(LHeader.FuniqueID, tfid)
+		funiqueid = append(funiqueid, byte(rand.Int()))
 	}
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.FuniqueID)
+	LgjAllBody = byteMerge(LgjAllBody, funiqueid)
 
 	//Socketfd 处理 63+4=67
-	LHeader.Socketfd = IntToByte(int64(0))[0:4]
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.Socketfd)
+	LgjAllBody = byteMerge(LgjAllBody, IntToByte(int64(0))[0:4])
 
+	//包体处理
+	body := []byte(params.Data)
+
+	//iDataLen 处理 包体长度 67+4=71
+	LgjAllBody = byteMerge(LgjAllBody, IntToByte(int64(len(body)))[0:4])
+
+	LgjAllBody = byteMerge(LgjAllBody, body)
+
+	//iCheckSum校验和 处理
+	LgjAllBody[13] = CheckSum(LgjAllBody[14:])
+
+	return LgjAllBody
 }
 
 //byte 数组合并
@@ -105,28 +105,14 @@ func byteMerge(srcData []byte, distData []byte) (result []byte) {
 	return result
 }
 
-func LgjBobys() []byte {
-	//包体处理
-	body := []byte(common.GlobalParams.Data)
-	//iDataLen 处理 67+4=71
-	LHeader.iDataLen = IntToByte(int64(len(body)))[0:4]
-
-	LgjAllBody = byteMerge(LgjAllBody, LHeader.iDataLen)
-
-	LgjAllBody = byteMerge(LgjAllBody, body)
-	LHeader.iCheckSum = CheckSum(LgjAllBody[14:])
-	LgjAllBody[13] = LHeader.iCheckSum
-	return LgjAllBody
-}
-
 //对结果进行处理
-func LgjDescResult(count int, result []byte) {
+func LgjDescResult(count int, result []byte) (bussResult string) {
 	//计算校验值
 	if CheckSum(result[14:]) != result[13] {
 		log.Fatal("校验值不通过")
 	}
-	bussResult := result[71:]
-	fmt.Println(string(bussResult))
+	bussResult = string(result[71:])
+	return bussResult
 }
 
 //IntToByte 实现 使用小端

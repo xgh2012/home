@@ -6,9 +6,13 @@ import (
 )
 
 func main() {
-	controll.Test()
-	return
-	//model.GetHeader()
-	http.HandleFunc("/", controll.WebdataTran)
-	http.ListenAndServe("127.0.0.1:56789", nil)
+	/*fmt.Println(common.Config.RediszzHostname)
+	fmt.Println(common.Config.RediszzPort)
+	fmt.Println(common.Config.RediszzPass)
+	redishandle.Test()
+	return*/
+	/*controll.Test()
+	return*/
+	http.HandleFunc("/t/", controll.WebdataTran)
+	http.ListenAndServe(":16789", nil)
 }
