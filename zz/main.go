@@ -40,8 +40,9 @@ type Tlgjlist struct {
 }
 
 func main() {
+	WriteSuccessLog("start")
 	//lgj.LgjDescResult(lgj.DoSend(lgj.SendData()))
-	var sendObj Tlgjsendata
+	/*var sendObj Tlgjsendata
 	sendObj.Icmd = 2006
 	sendObj.INoRedis = 0
 	sendObj.IVer = 0
@@ -49,17 +50,23 @@ func main() {
 	sendObj.Sbarid = "44030610001028"
 	sendObj.Stoken = "1234567890123456"
 
-	Tlgjlist.Adddata(sendObj)
-	return
+	//Tlgjlist.Adddata(sendObj)
+	return*/
+
 	//创建连接池
-	var zzServer = "zhongzhuan.topfreeweb.net:50001"
-	go CteateAssociation(zzServer)
-	time.Sleep(5 * time.Second)
+	var tcpsrv = "zhongzhuan.topfreeweb.net:50001"
+	go CteateAssociation(tcpsrv)
+
+	var i = 0
+	for i < 500 {
+		time.Sleep(5 * time.Second)
+		i++
+	}
 }
 
 //创建协程
 func CteateAssociation(tcpsrv string) (t string) {
-	var icount = 2 //默认每个中转10个长连接，不够再加
+	var icount = 10 //默认每个中转10个长连接，不够再加
 	var ino, i int
 	var bok bool
 	tmpchannel := make(chan int, icount*3)
@@ -86,9 +93,9 @@ func ReadAssociationLgj(tcpsrv string, ch chan int, ino int) {
 		result     []byte
 		bussResult string
 		b          int
+		iok        bool
 	)
-	var recdata string
-	var iok bool
+
 	conn, err := net.DialTimeout("tcp", tcpsrv, time.Second*6)
 	if err != nil {
 		WriteSuccessLog("conn lgjzhongzhuan faild,err:" + err.Error())
@@ -101,13 +108,10 @@ func ReadAssociationLgj(tcpsrv string, ch chan int, ino int) {
 
 	go longconnlgj_write(conn.(*net.TCPConn), tmpsendlist)
 
-	fmt.Println(tmpsendlist)
-	return
-
 	for {
 		b, err = io.ReadFull(conn, result)
 		if (err != nil) || (b < C_HeadLgjLen) {
-			WriteSuccessLog("read1 lgjzhongzhuan faild,err:" + err.Error())
+			WriteSuccessLog("read1 lgjzhongzhuan faild,err:")
 			break
 		}
 		bussResult, iok = lgj.LgjDescResult(result)
@@ -115,7 +119,6 @@ func ReadAssociationLgj(tcpsrv string, ch chan int, ino int) {
 			WriteSuccessLog("read2 lgjzhongzhuan faild,err:" + err.Error())
 		}
 	}
-	WriteSuccessLog(recdata)
 	WriteSuccessLog(bussResult)
 	ch <- ino
 }
@@ -127,6 +130,8 @@ func longconnlgj_write(clt *net.TCPConn, datalist *Tlgjlist) {
 		err    error
 		icount = 0
 	)
+
+	fmt.Println(datalist)
 
 	for {
 		sendObj := lgj.SendData()
@@ -153,6 +158,7 @@ func WriteSuccessLog(str string) {
 		log.Fatalln("Failed to open error log file:", err)
 	}
 	Info = log.New(file, "", log.Ldate|log.Ltime)
+	fmt.Println(str)
 	Info.Println(Now(), str, "\r")
 }
 func Now() (t string) {

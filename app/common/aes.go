@@ -101,3 +101,24 @@ func TestEncryptDecrypt() {
 	decryptData, _ := tool.Decrypt([]byte(encryptData))
 	fmt.Println(string(decryptData))
 }
+
+//加密数据
+func AesEncrypt(str string) string {
+	key := []byte("{003FDED7-1D4D-}")
+	blickSize := len(key)
+	tool := NewAesTool(key, blickSize)
+	encryptData, _ := tool.Encrypt([]byte(str))
+	res := base64.StdEncoding.EncodeToString(encryptData)
+	return res
+}
+
+//解密数据
+func AesDecrypt(str string) string {
+	key := []byte("{003FDED7-1D4D-}")
+	blickSize := len(key)
+	tool := NewAesTool(key, blickSize)
+	encryptData, _ := base64.StdEncoding.DecodeString(str)
+	fmt.Println(str)
+	decryptData, _ := tool.Decrypt([]byte(encryptData))
+	return string(decryptData)
+}
