@@ -19,10 +19,10 @@ func main() {
 		panic(err)
 	}
 	defer res.Body.Close()
-	f:=res.Body
+	f := res.Body
 	// Parse HTML document.
 	doc, err := htmlquery.Parse(f)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 
@@ -37,8 +37,8 @@ func main() {
 		//fmt.Printf("%s \n", service.ConvertToString(iter.Current().Value(),"gbk","utf-8")) // output href
 		//fmt.Printf("%s \n", service.ConvertToString(iter.Current().Value(),"gbk","utf-8")) // output href
 	}
-	nodes := htmlquery.Find(doc,"/html/body/div[@class='all']/div[@class='main']/div[@class='cl p10'][1]/div[@class='news']/div[@class='content'][1]/div[@class='newslist_box'][1]/ul[@class='newslist']")
-	for _,node:=range nodes {
+	nodes := htmlquery.Find(doc, "/html/body/div[@class='all']/div[@class='main']/div[@class='cl p10'][1]/div[@class='news']/div[@class='content'][1]/div[@class='newslist_box'][1]/ul[@class='newslist']")
+	for _, node := range nodes {
 		url := htmlquery.FindOne(node, "./a/@href")
 		fmt.Println(url)
 		fmt.Println(node.Attr)

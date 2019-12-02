@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 )
+
 var (
 	dir1 = time.Now().Format("2006-01-02")
 )
 
-func GetContent(url string) (*goquery.Document)  {
+func GetContent(url string) *goquery.Document {
 	fmt.Println(url)
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -51,7 +52,7 @@ func GetContent(url string) (*goquery.Document)  {
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 	return doc
@@ -63,18 +64,18 @@ func FindImageAll(mainContent *goquery.Selection) (imagesSlice []string) {
 
 	imgNum := 0
 	mainContent.Find("img").Each(func(i int, selection *goquery.Selection) {
-		imgSrc,err:= selection.Attr("src")
-		if err==false || imgNum>2 {
+		imgSrc, err := selection.Attr("src")
+		if err == false || imgNum > 2 {
 			return
 		}
-		filename :=ImageDownload(imgSrc)
-		if len(filename)<2 {
+		filename := ImageDownload(imgSrc)
+		if len(filename) < 2 {
 			return
 		}
 		imgNum++
-		filepath := ImgServerHost+string([]rune(filename)[len(RootPath):])
+		filepath := ImgServerHost + string([]rune(filename)[len(RootPath):])
 		//fmt.Println(filepath)
-		ImagesSlice=append(ImagesSlice,filepath)
+		ImagesSlice = append(ImagesSlice, filepath)
 	})
 	return ImagesSlice
 }
@@ -82,26 +83,26 @@ func FindImageAll(mainContent *goquery.Selection) (imagesSlice []string) {
 //下载图片文件
 func ImageDownload(imagPath string) (filename string) {
 	//创建文件夹
-	dir := ImgPath+"/"+dir1
+	dir := ImgPath + "/" + dir1
 	aa, err := os.Stat(dir)
-	if err!=nil || aa==nil{
-		os.Mkdir(dir,0755)
+	if err != nil || aa == nil {
+		os.Mkdir(dir, 0755)
 	}
-	if strings.Index(imagPath,"http://") ==-1 && strings.Index(imagPath,"https://") ==-1 {
-		if strings.Index(imagPath,"//") ==0{
-			imagPath = "http:"+imagPath
-		}else {
+	if strings.Index(imagPath, "http://") == -1 && strings.Index(imagPath, "https://") == -1 {
+		if strings.Index(imagPath, "//") == 0 {
+			imagPath = "http:" + imagPath
+		} else {
 			return ""
 		}
 	}
 	resp, err := http.Get(imagPath)
-	if err!=nil{
+	if err != nil {
 		log.Fatalln(err)
 		return ""
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	if err!=nil{
+	if err != nil {
 		return ""
 	}
 
@@ -116,13 +117,13 @@ func ImageDownload(imagPath string) (filename string) {
 	realName := ImageRealPath(name)
 	out, err := os.Create(realName)
 
-	if err!=nil{
+	if err != nil {
 		return
 	}
 
 	io.Copy(out, bytes.NewReader(body))
 	checkOver := ImageAttrCheck(realName)
-	if checkOver == false{
+	if checkOver == false {
 		return ""
 	}
 
@@ -132,13 +133,13 @@ func ImageDownload(imagPath string) (filename string) {
 	return newFileName
 }
 
-func ImageRealPath(name string) (realPath string)  {
-	realPath = ImgPath+"/"+dir1+"/"+name
+func ImageRealPath(name string) (realPath string) {
+	realPath = ImgPath + "/" + dir1 + "/" + name
 	return realPath
 }
 
 //文件属性检测
-func ImageAttrCheck(fileName string) (isTure bool)  {
+func ImageAttrCheck(fileName string) (isTure bool) {
 	reader, err := os.Open(fileName)
 	if err != nil {
 		log.Fatalln(err)
@@ -149,49 +150,49 @@ func ImageAttrCheck(fileName string) (isTure bool)  {
 		return false
 	}
 
-	x:= image.Bounds().Size().X
-	y:= image.Bounds().Size().Y
+	x := image.Bounds().Size().X
+	y := image.Bounds().Size().Y
 
-	if x<100 || y<100 {
+	if x < 100 || y < 100 {
 		return false
 	}
 
 	fileType := strings.Split(fileName, ".")
 	fileTypeName := fileType[len(fileType)-1]
 	allowArr := []string{"jpg", "jpeg", "png", "gif"}
-	exists,index:=in_array(fileTypeName,allowArr)
+	exists, index := in_array(fileTypeName, allowArr)
 
-	if exists == false || index==-1 {
+	if exists == false || index == -1 {
 		return false
 	}
-	return  true
+	return true
 }
 
 //更新图片，按一定比例 或尺寸裁剪
-func ResizeImage(name string) string  {
+func ResizeImage(name string) string {
 	file, err := os.Open(name)
 	if err != nil {
 		return ""
 	}
 	fileType := strings.Split(name, ".")
 	fileTypeName := fileType[len(fileType)-1]
-	newFileName := fileType[0]+"_new."+fileTypeName
+	newFileName := fileType[0] + "_new." + fileTypeName
 
 	// decode jpeg into image.Image
-	var  img image.Image
+	var img image.Image
 	switch fileTypeName {
-		case "jpeg":
-		case "jpg":
-			img, err = jpeg.Decode(file)
-			break
-		case "png":
-			img, err = png.Decode(file)
-			break
-		case "gif":
-			img, err = gif.Decode(file)
-			break
-		default:
-			return ""
+	case "jpeg":
+	case "jpg":
+		img, err = jpeg.Decode(file)
+		break
+	case "png":
+		img, err = png.Decode(file)
+		break
+	case "gif":
+		img, err = gif.Decode(file)
+		break
+	default:
+		return ""
 	}
 
 	if err != nil {
@@ -201,7 +202,7 @@ func ResizeImage(name string) string  {
 
 	// resize to width 1000 using Lanczos resampling
 	// and preserve aspect ratio
-	if img==nil {
+	if img == nil {
 		return ""
 	}
 	m := resize.Resize(320, 180, img, resize.Lanczos3)
@@ -214,18 +215,18 @@ func ResizeImage(name string) string  {
 
 	// write new image to file
 	switch fileTypeName {
-		case "jpeg":
-		case "jpg":
-			jpeg.Encode(out, m, nil)
-			break
-		case "png":
-			png.Encode(out, m)
-			break
-		case "gif":
-			gif.Encode(out, m,nil)
-			break
-		default:
-			return ""
+	case "jpeg":
+	case "jpg":
+		jpeg.Encode(out, m, nil)
+		break
+	case "png":
+		png.Encode(out, m)
+		break
+	case "gif":
+		gif.Encode(out, m, nil)
+		break
+	default:
+		return ""
 	}
 	return newFileName
 }
@@ -258,9 +259,9 @@ func WriteStringToFile(filepath, content string) {
 }
 
 /**
-	字符串编码转换功能
-	如：gbk转utf8
-	ConvertToString(html, "gbk", "utf-8")
+字符串编码转换功能
+如：gbk转utf8
+ConvertToString(html, "gbk", "utf-8")
 */
 func ConvertToString(src string, srcCode string, tagCode string) string {
 	srcCoder := mahonia.NewDecoder(srcCode)

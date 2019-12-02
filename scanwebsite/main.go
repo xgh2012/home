@@ -1,4 +1,4 @@
-package  main
+package main
 
 import (
 	"home/scanwebsite/zhandian/duowan"
@@ -8,7 +8,7 @@ import (
 	"home/scanwebsite/zhandian/youxia"
 )
 
-func main (){
+func main() {
 	tdmgame.GetList()
 	//return
 	u9.U9GetList()

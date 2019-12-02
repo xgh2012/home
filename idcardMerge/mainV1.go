@@ -11,14 +11,14 @@ import (
 
 var (
 	frontImgDecode image.Image
-	frontBounds image.Rectangle
-	frontRgba *image.RGBA
+	frontBounds    image.Rectangle
+	frontRgba      *image.RGBA
 )
 
-func main()  {
+func main() {
 
 	//获取背景 正面
-	frontImgDecode,frontBounds,frontRgba = model.GetFront()
+	frontImgDecode, frontBounds, frontRgba = model.GetFront()
 	draw.Draw(frontRgba, frontBounds, frontImgDecode, image.ZP, draw.Src)
 
 	//头像处理
@@ -34,12 +34,12 @@ func main()  {
 }
 
 //头像处理
-func idcardHead()  {
+func idcardHead() {
 	//头像处理---------------开始
 	//调整头像位置
 	headOffset := image.Pt(413, 72)
 	//获取 正面 头像
-	headImgDecode,headBounds,_:=model.GetHeadImg()
+	headImgDecode, headBounds, _ := model.GetHeadImg()
 
 	draw.Draw(frontRgba, headBounds.Add(headOffset), headImgDecode, image.ZP, draw.Over)
 	//头像处理---------------结束
@@ -62,7 +62,6 @@ func hdImage(m image.Image) *image.RGBA {
 	}
 	return newRgba
 }
-
 
 //图片色彩反转
 func fzImage(m image.Image) *image.RGBA {
